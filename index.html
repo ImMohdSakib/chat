@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Chat</title>
+    <style>
+        #chat { height: 300px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; }
+        input, button { padding: 10px; margin: 5px; }
+    </style>
+</head>
+<body>
+    <div id="chat"></div>
+    <input id="receiverMobile" placeholder="Receiver's Mobile" />
+    <input id="message" placeholder="Message" />
+    <button onclick="sendMessage()">Send</button>
+
+   <script>
+    let socket;
+
+    window.onload = function () {
+        const mobileNumber = prompt("Enter your mobile number:");
+        if (!mobileNumber) {
+            alert("Mobile number is required to connect!");
+            return;
+        }
+
+        // Initialize WebSocket
+        socket = new WebSocket("ws://localhost:8081/ChatApplication/index?mobileNumber=" + mobileNumber);
+
+        socket.onopen = function () {
+            console.log("WebSocket connection established");
+        };
+
+        socket.onmessage = function (event) {
+            const chat = document.getElementById('chat');
+            chat.innerHTML += `<br><b>Received:</b> ${event.data}`;
+            chat.scrollTop = chat.scrollHeight; // Scroll to the bottom
+        };
+
+        socket.onclose = function () {
+            console.log("WebSocket connection closed");
+        };
+
+        socket.onerror = function (error) {
+            console.error("WebSocket error: ", error);
+        };
+    };
+
+    // Define sendMessage function here
+    function sendMessage() {
+        const receiverMobile = document.getElementById('receiverMobile').value.trim();
+        const message = document.getElementById('message').value.trim();
+
+        if (!receiverMobile || !message) {
+            alert("Receiver's mobile number aur message dono zaroori hain!");
+            return;
+        }
+
+        if (socket && socket.readyState === WebSocket.OPEN) {
+            const formattedMessage = `${receiverMobile}|${message}`;
+            socket.send(formattedMessage);
+
+            const chat = document.getElementById('chat');
+            chat.innerHTML += `<br><b>You:</b> ${message}`;
+            chat.scrollTop = chat.scrollHeight;
+
+            document.getElementById('message').value = '';
+        } else {
+            alert("WebSocket connection is not open. Please wait or try reconnecting.");
+        }
+    }
+</script>
+
+</body>
+</html>
